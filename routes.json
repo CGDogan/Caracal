@@ -495,7 +495,7 @@
     "route":"/fs/addedFile",
     "method":"get",
     "handlers":[
-      {"function":"addedFileToFS", "args": []}
+      {"function":"addedFileToFS", "args": ["camic", "slide"]}
     ]
   },{
     "route":"/fs/deletedFile",

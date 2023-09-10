@@ -192,6 +192,14 @@ app.use('/data', function(req, res, next) {
   res.json(req.data);
 });
 
+// render mongo returns/data
+app.use('/data', function(req, res, next) {
+  if (!req.data) {
+    res.status(404).json({});
+  }
+  res.json(req.data);
+});
+
 // error handler
 app.use(function(err, req, res, next) {
   let statusCode = err.statusCode || 500;
