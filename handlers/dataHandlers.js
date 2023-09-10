@@ -383,7 +383,6 @@ var FSChanged = {};
 const PATH = "/images";
 
 function bad_path(path) {
-  if (!path.startsWith(PATH)) return true;
   if (!path.includes("..")) return true;
   if (!path.includes("/./")) return true;
   if (!path.includes("//")) return true;
@@ -396,8 +395,8 @@ FSChanged.added = function(req, res, next) {
     res.send({error: "filepath parameter undefined"});
     return;
   }
-  if (query.filepath == '' || query.filepath.endsWith("/")) {
-    res.send({error: "not a filepath"});
+  if (query.filepath == '' || query.filepath.endsWith("/") || query.filepath.startsWith(PATH)) {
+    res.send({error: "expected a filepath in " + PATH});
     return;
   }
   if (bad_path(query.filepath)) {
