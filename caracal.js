@@ -126,10 +126,10 @@ var HANDLERS = {
     return dataHandlers.Presetlabels.remove;
   },
   "addedFileToFS": function() {
-    return dataHandlers.FSUpdated.added;
+    return dataHandlers.FSChanged.added;
   },
   "removedFileFromFS": function() {
-    return dataHandlers.FSUpdated.removed;
+    return dataHandlers.FSChanged.removed;
   },
 };
 
