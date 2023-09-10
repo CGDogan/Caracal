@@ -379,13 +379,13 @@ User.wcido = function(req, res, next) {
 
 var FSChanged = {};
 
-FSChanged.added = function(req, res, next) {
+/*FSChanged.added = function(req, res, next) {
   var query = req.query;
   var hello = {};
   res.send(hello);
-};
+};*/
 
-/*FSChanged.added = function(db, collection) {
+FSChanged.added = function(db, collection) {
   return function(req, res, next) {
     var query = req.query;
     mongoDB.find(db, collection, query).then((x) => {
@@ -393,7 +393,7 @@ FSChanged.added = function(req, res, next) {
       next();
     }).catch((e) => next(e));
   };
-};*/
+};
 
 FSChanged.removed = function(req, res, next) {
   var query = req.query;
