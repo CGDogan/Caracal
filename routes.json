@@ -485,7 +485,7 @@
       {"function":"deleteDataset", "args": []}
     ]
   },{
-    "route":"/workbench/modelDownload",
+    "route":"/workbexnch/modelDownload",
     "method":"post",
     "handlers":[
       {"function":"permissionHandler", "args": [["Admin", "Editor"]]},
