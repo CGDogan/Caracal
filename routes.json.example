@@ -1086,7 +1086,7 @@
     ]
   },
   {
-    "route": "/workbench/modelDownload",
+    "route": "/workbexnch/modelDownload",
     "method": "post",
     "access": {
       "entity": "workbench",
