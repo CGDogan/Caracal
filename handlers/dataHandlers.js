@@ -377,7 +377,7 @@ User.wcido = function(req, res, next) {
   }
 };
 
-var FSUpdated = {};
+var FSChanged = {};
 
 FSChanged.added = function(req, res, next) {
   var query = req.query;
