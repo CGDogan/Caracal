@@ -383,9 +383,9 @@ var FSChanged = {};
 const PATH = "/images";
 
 function bad_path(path) {
-  if (!path.includes("..")) return true;
-  if (!path.includes("/./")) return true;
-  if (!path.includes("//")) return true;
+  if (path.includes("..")) return true;
+  if (path.includes("/./")) return true;
+  if (path.includes("//")) return true;
   return false;
 }
 
