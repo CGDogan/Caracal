@@ -385,7 +385,7 @@ FSChanged.added = function(req, res, next) {
   res.send(hello);
 }
 
-FSChangded.removed = function(req, res, next) {
+FSChanged.removed = function(req, res, next) {
   var query = req.query;
 }
 
