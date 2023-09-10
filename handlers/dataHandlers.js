@@ -382,7 +382,7 @@ var FSChanged = {};
 FSChanged.added = function(req, res, next) {
   var query = req.query;
   console.log("starting"+query);
-  console.log(req);
+  console.log(query);
   var hello = {};
   //res.send(hello);
   mongoDB.find("camic", "slide", query).then((x) => {
