@@ -389,16 +389,6 @@ FSChanged.added = function(req, res, next) {
     }).catch((e) => next(e));
 };
 
-FSChanged.added = function(db, collection) {
-  return function(req, res, next) {
-    var query = req.query;
-    mongoDB.find(db, collection, query).then((x) => {
-      req.data = x;
-      next();
-    }).catch((e) => next(e));
-  };
-};
-
 FSChanged.removed = function(req, res, next) {
   var query = req.query;
 };
