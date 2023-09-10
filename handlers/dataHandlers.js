@@ -380,8 +380,9 @@ User.wcido = function(req, res, next) {
 var FSChanged = {};
 
 FSChanged.added = function(req, res, next) {
-  console.log("starting");
   var query = req.query;
+  console.log("starting"+query);
+  console.log(req);
   var hello = {};
   //res.send(hello);
   mongoDB.find("camic", "slide", query).then((x) => {
