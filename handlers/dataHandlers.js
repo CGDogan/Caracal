@@ -395,8 +395,8 @@ FSChanged.added = function(req, res, next) {
     res.send({error: "filepath parameter undefined"});
     return;
   }
-  if (query.filepath == '' || query.filepath.endsWith("/") || query.filepath.startsWith(PATH)) {
-    res.send({error: "expected a filepath in " + PATH});
+  if (query.filepath == '' || query.filepath.endsWith("/") || !query.filepath.startsWith(PATH)) {
+    res.send({error: "expected a path to a file in " + PATH});
     return;
   }
   if (bad_path(query.filepath)) {
