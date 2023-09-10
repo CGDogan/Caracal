@@ -493,7 +493,7 @@
     ]
   },{
     "route":"/fs/addedFile",
-    "method":"post",
+    "method":"get",
     "handlers":[
       {"function":"addedFileToFS", "args": []}
     ]
