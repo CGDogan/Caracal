@@ -1,5 +1,6 @@
 const DISABLE_SEC = (process.env.DISABLE_SEC === 'true') || false;
 const mongoDB = require("../service/database");
+const path = require('node:path'); 
 
 var General = {};
 General.find = function(db, collection) {
@@ -379,13 +380,31 @@ User.wcido = function(req, res, next) {
 
 var FSChanged = {};
 
+const PATH = "/images";
+
+function bad_path(path) {
+  if (!path.startsWith(PATH)) return true;
+  if (!path.includes("..")) return true;
+  if (!path.includes("/./")) return true;
+  if (!path.includes("//")) return true;
+  return false;
+}
+
 FSChanged.added = function(req, res, next) {
   var query = req.query;
-  console.log("starting"+query);
-  console.log(query);
-  var hello = {};
-  //res.send(hello);
+  if (!query.hasOwnProperty("filepath")) {
+    res.send({error: "filepath parameter undefined"})
+  }
+  if (query.filepath == '' || query.filepath.endsWith("/")) {
+    res.send({error: "not a filepath"})
+  }
+  if (bad_path(query.filepath)) {
+    res.send({error: "filepath not canonical"})
+  }
   mongoDB.find("camic", "slide").then((x) => {
+      // If contains parent path, do nothing
+      console.log(typeof x);
+      // if not, add it
       res.send(x)
     }).catch((e) => next(e));
 };
