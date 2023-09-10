@@ -377,11 +377,24 @@ User.wcido = function(req, res, next) {
   }
 };
 
+var FSUpdated = {};
+
+FSChanged.added = function(req, res, next) {
+  var query = req.query;
+  var hello = {};
+  res.send(hello);
+}
+
+FSChanged.removed = function(req, res, next) {
+  var query = req.query;
+}
+
 dataHandlers = {};
 dataHandlers.Heatmap = Heatmap;
 dataHandlers.Mark = Mark;
 dataHandlers.User = User;
 dataHandlers.Presetlabels = Presetlabels;
+dataHandlers.FSChanged = FSChanged;
 
 dataHandlers.General = General;
 module.exports = dataHandlers;
