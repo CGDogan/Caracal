@@ -501,7 +501,7 @@
     "route":"/fs/deletedFile",
     "method":"get",
     "handlers":[
-      {"function":"removedFileFromFS", "args": ["camic", "slide"]}
+      {"function":"removedFileFromFS", "args": []}
     ]
   }
 ]
