@@ -125,9 +125,7 @@ var HANDLERS = {
   "removePresetlabels": function() {
     return dataHandlers.Presetlabels.remove;
   },
-  "addedFileToFS": function() {
-    return dataHandlers.FSChanged.added;
-  },
+  "addedFileToFS": dataHandlers.FSChanged.added,
   "removedFileFromFS": function() {
     return dataHandlers.FSChanged.removed;
   },
