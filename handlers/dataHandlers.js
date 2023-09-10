@@ -385,8 +385,7 @@ FSChanged.added = function(req, res, next) {
   var hello = {};
   res.send(hello);
   mongoDB.find("camic", "slide", query).then((x) => {
-      req.data = x;
-      next();
+      res.send(x)
     }).catch((e) => next(e));
 };
 
