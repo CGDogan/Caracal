@@ -393,13 +393,16 @@ function bad_path(path) {
 FSChanged.added = function(req, res, next) {
   var query = req.query;
   if (!query.hasOwnProperty("filepath")) {
-    res.send({error: "filepath parameter undefined"})
+    res.send({error: "filepath parameter undefined"});
+    return;
   }
   if (query.filepath == '' || query.filepath.endsWith("/")) {
-    res.send({error: "not a filepath"})
+    res.send({error: "not a filepath"});
+    return;
   }
   if (bad_path(query.filepath)) {
-    res.send({error: "filepath not canonical"})
+    res.send({error: "filepath not canonical"});
+    return;
   }
   mongoDB.find("camic", "slide").then((x) => {
       // If contains parent path, do nothing
