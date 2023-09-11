@@ -443,8 +443,9 @@ FSChanged.removed = function(req, res, next) {
   // The following is complicated due to the current "one file is one entry" schema design
   // on delete, if there's no file left in folder, consider the entry deleted hence remove from db
   // if there's any file left, replace the filepath and location to that.
-  fetch("http://ca-load:4000/data/folder/" + path.relative(PATH, path.dirname(query.filepath))).catch(e => {
-    res.send({error: "slideloader failure"});
+  fetch("http://ca-load:4000/data/folder/" + path.relative(PATH, path.dirname(query.filepath)))
+  .catch(e => {
+      res.send({error: "slideloader failure"});
   }).then(r => {
     (async () => {
       if (!r.ok) {
@@ -471,11 +472,11 @@ FSChanged.removed = function(req, res, next) {
             try {
               await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid})
             } catch (e) {
-              console.log("Debug123")
+              console.log(e)
             }
           }
         }
-        res.send({success: "removed entries"});
+        res.send({success: "removed entries if any"});
       } else {
         // replace entries with a different file.
         // any file from the list of remaining files would work
@@ -489,13 +490,8 @@ FSChanged.removed = function(req, res, next) {
               var newVals = {
                 $set: {location: location, filepath: filepath},
               };
-              console.log("mongo params:")
-              console.log({_id: entry._id.$oid})
-              console.log(newVals)
-
               await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, newVals);
             } catch (e) {
-              console.log("Debug234")
               console.log(e)
             }
           }
