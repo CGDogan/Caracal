@@ -424,7 +424,7 @@ FSChanged.added = function(req, res, next) {
       data.filepath = filepath;
       data.location = location;
       data.name = name;
-      mongoDB.add(db, collection, data).then((x) => {
+      mongoDB.add("camic", "slide", data).then((x) => {
         res.send({success: "added successfully"});
       }).catch((e) => {
         res.send({success: "mongo failure"});
