@@ -447,6 +447,8 @@ FSChanged.removed = function(req, res, next) {
     }
     console.log("response: ")
     console.log(r.ok)
+    console.log(r.text())
+
     console.log(r.json())
     res.send(r.json())
   })
