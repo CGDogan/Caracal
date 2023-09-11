@@ -458,7 +458,7 @@ FSChanged.removed = function(req, res, next) {
         return;
       }
       try {
-        var x = await mongoDB.find(db, collection)
+        var x = await mongoDB.find("camic", "slide")
       } catch(e) {
         res.send({error: "mongo failure " });
         console.log(e)
@@ -470,7 +470,7 @@ FSChanged.removed = function(req, res, next) {
           if (JSON.stringify(entry).includes(query.filepath)) {
             // take _id, remove it
             try {
-              await mongoDB.delete(db, collection, {"_id": entry._id})
+              await mongoDB.delete("camic", "slide", {"_id": entry._id})
             } catch (e) {
               console.log("Debug123")
             }
@@ -489,7 +489,7 @@ FSChanged.removed = function(req, res, next) {
               var newVals = {
                 $set: {location: location, filepath: filepath},
               };
-              await mongoDB.update(db, collection, {"_id": entry._id}, newVals)
+              await mongoDB.update("camic", "slide", {"_id": entry._id}, newVals)
             } catch (e) {
               console.log("Debug234")
             }
