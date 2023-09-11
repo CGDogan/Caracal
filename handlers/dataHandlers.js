@@ -495,8 +495,8 @@ FSChanged.removed = function(req, res, next) {
           }
         }
       }
-    })
-  })();
+    })()
+  });
 };
 
 dataHandlers = {};
