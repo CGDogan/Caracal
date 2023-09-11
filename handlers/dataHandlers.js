@@ -1,6 +1,6 @@
 const DISABLE_SEC = (process.env.DISABLE_SEC === 'true') || false;
 const mongoDB = require("../service/database");
-const path = require('node:path'); 
+const path = require('node:path');
 
 var General = {};
 General.find = function(db, collection) {
@@ -382,7 +382,7 @@ var FSChanged = {};
 
 const PATH = "/images";
 
-function bad_path(path) {
+function badPath(path) {
   if (path.includes("..")) return true;
   if (path.includes("/./")) return true;
   if (path.includes("//")) return true;
@@ -399,7 +399,7 @@ FSChanged.added = function(req, res, next) {
     res.send({error: "expected a path to a file in " + PATH});
     return;
   }
-  if (bad_path(query.filepath)) {
+  if (badPath(query.filepath)) {
     res.send({error: "filepath not canonical"});
     return;
   }
@@ -419,28 +419,30 @@ FSChanged.added = function(req, res, next) {
     var filepath = query.filepath;
     var location = path.relative(PATH, query.filepath);
     var name = path.basename(query.filepath);
-    fetch("http://ca-load:4000/data/one/" + location).then(r => {
+    fetch("http://ca-load:4000/data/one/" + location).then((r) => {
       if (!r.ok) {
         res.send({error: "SlideLoader error: perhaps the filepath points to an inexistant file?"});
-        throw "";
-      }
-      return r.json();
-    }).then(data => {
-      if (data.error) {
-        res.send({error: "SlideLoader error: the filepath points to an inexistant file?"});
         return;
       }
-      data.filepath = filepath;
-      data.location = location;
-      data.name = name;
-      mongoDB.add("camic", "slide", data).then((x) => {
-        res.send({success: "added successfully"});
-      }).catch((e) => {
-        res.send({success: "mongo failure"});
-        console.log(e);
+      r.json().then(data => {
+        if (data.error) {
+          res.send({error: "SlideLoader error: the filepath points to an inexistant file?"});
+          return;
+        }
+        data.filepath = filepath;
+        data.location = location;
+        data.name = name;
+        mongoDB.add("camic", "slide", data).then((x) => {
+          res.send({success: "added successfully"});
+        }).catch((e) => {
+          res.send({success: "mongo failure"});
+          console.log(e);
+        });
       });
     })
-  }).catch((e) => {});
+  }).catch((e) => {
+    res.send({error: ""});
+  });
 };
 
 
@@ -454,7 +456,7 @@ FSChanged.removed = function(req, res, next) {
     res.send({error: "expected a path to a file in " + PATH});
     return;
   }
-  if (bad_path(query.filepath)) {
+  if (badPath(query.filepath)) {
     res.send({error: "filepath not canonical"});
     return;
   }
@@ -489,7 +491,7 @@ FSChanged.removed = function(req, res, next) {
       // but if nothing left in the folder, remove it. This is because readers
       // need to be pointed to a valid file, any valid file of a series, in a subfolder.
       // But be more fault tolerant and allow changing current invalid pointers to a valid one in file.
-      var dirname = path.dirname(query.filepath)
+      var dirname = path.dirname(query.filepath);
 
       if (r.contents.length == 0) {
         // delete entries
@@ -497,9 +499,9 @@ FSChanged.removed = function(req, res, next) {
           if (JSON.stringify(entry).includes(dirname)) {
             // take _id, remove it
             try {
-              await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid})
+              await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid});
             } catch (e) {
-              console.log(e)
+              console.log(e);
             }
           }
         }
@@ -519,7 +521,7 @@ FSChanged.removed = function(req, res, next) {
               };
               await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, newVals);
             } catch (e) {
-              console.log(e)
+              console.log(e);
             }
           }
         }
