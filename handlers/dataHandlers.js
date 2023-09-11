@@ -421,13 +421,13 @@ FSChanged.added = function(req, res, next) {
     var name = path.basename(query.filepath);
     fetch("http://ca-load:4000/data/one/" + location).then(r => {
       if (!r.ok) {
-        res.send("SlideLoader error: perhaps the filepath points to an inexistant file?");
+        res.send({error: "SlideLoader error: perhaps the filepath points to an inexistant file?"});
         throw "";
       }
       return r.json();
     }).then(data => {
       if (data.error) {
-        res.send("SlideLoader error: the filepath points to an inexistant file?");
+        res.send({error: "SlideLoader error: the filepath points to an inexistant file?"});
         return;
       }
       data.filepath = filepath;
