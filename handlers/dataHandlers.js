@@ -461,9 +461,10 @@ FSChanged.removed = function(req, res, next) {
         var x = await mongoDB.find("camic", "slide")
       } catch(e) {
         res.send({error: "mongo failure " });
-        console.log(e)
         return;
       }
+      console.log("This is res:")
+      console.log(r)
       if (r.contents.length == 0) {
         // delete entries
         for (const entry of x) {
