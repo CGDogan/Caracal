@@ -440,7 +440,7 @@ FSChanged.removed = function(req, res, next) {
     return;
   }
   console.log("URL DEBUG: " + "http://ca-load:4000/data/folder/" + query.filepath);
-  fetch("http://ca-load:4000/data/folder/" + query.filepath).then(r => {
+  fetch("http://ca-load:4000/data/folder/" + path.relative(PATH, query.filepath)).then(r => {
     if (!r.ok) {
       res.send({error: "path does not exist on the filesystem"});
       return;
