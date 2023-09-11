@@ -496,6 +496,7 @@ FSChanged.removed = function(req, res, next) {
               await mongoDB.update("camic", "slide", {_id: entry._id}, newVals);
             } catch (e) {
               console.log("Debug234")
+              console.log(e)
             }
           }
         }
