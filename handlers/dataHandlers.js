@@ -407,6 +407,11 @@ FSChanged.added = function(req, res, next) {
     // If contains any file from the parent path, do nothing
     // otherwise, add it as a new entry
     var parentDir = path.dirname(query.filepath);
+
+    // Here, we can be more fault tolerant and handle the case that despite still being an entry,
+    // it was somehow deleted from the filesystem.
+    // It may be replaced with any other file in the folder or the user requested path
+    // given that we verify that it exists.
     if (JSON.stringify(x).includes(parentDir)) {
       res.send({success: "another file from the same subdirectory is already in database"});
       return;
@@ -421,6 +426,10 @@ FSChanged.added = function(req, res, next) {
       }
       return r.json();
     }).then(data => {
+      if (data.error) {
+        res.send("SlideLoader error: the filepath points to an inexistant file?");
+        throw "";
+      }
       data.filepath = filepath;
       data.location = location;
       data.name = name;
