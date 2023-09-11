@@ -439,7 +439,7 @@ FSChanged.removed = function(req, res, next) {
     res.send({error: "filepath not canonical"});
     return;
   }
-  console.log("URL DEBUG: " + "http://ca-load:4000/data/folder/" + query.filepath);
+  console.log("URL DEBUG: " + "http://ca-load:4000/data/folder/" + path.relative(PATH, query.filepath));
   fetch("http://ca-load:4000/data/folder/" + path.relative(PATH, query.filepath)).then(r => {
     if (!r.ok) {
       res.send({error: "path does not exist on the filesystem"});
