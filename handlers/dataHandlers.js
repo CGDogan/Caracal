@@ -404,16 +404,46 @@ FSChanged.added = function(req, res, next) {
     return;
   }
   mongoDB.find("camic", "slide").then((x) => {
-      // If contains parent path, do nothing
-      console.log(typeof x);
-      // if not, add it
-      res.send(x)
-    }).catch((e) => next(e));
+    // If contains any file from the parent path, do nothing
+    // otherwise, add it as a new entry
+    var parentDir = path.dirname(query.filepath);
+    if (JSON.stringify(x).includes(parentDir)) {
+      res.send({success: "another file from the same subdirectory is already in database"});
+      return;
+    }
+    var data = {
+      // TODO: add the remaining of the metadata as well
+      filepath: query.filepath,
+      location: path.relative(PATH, query.filepath),
+      name: path.basename(query.filepath),
+    }
+    mongoDB.add(db, collection, data).then((x) => {
+      res.send({success: "added to the database a new file"});
+      return;
+    }).catch((e) => {});
+  }).catch((e) => {});
 };
 
 
 FSChanged.removed = function(req, res, next) {
   var query = req.query;
+  if (!query.hasOwnProperty("filepath")) {
+    res.send({error: "filepath parameter undefined"});
+    return;
+  }
+  if (query.filepath == '' || query.filepath.endsWith("/") || !query.filepath.startsWith(PATH)) {
+    res.send({error: "expected a path to a file in " + PATH});
+    return;
+  }
+  if (bad_path(query.filepath)) {
+    res.send({error: "filepath not canonical"});
+    return;
+  }
+  fetch("http://ca-load:4000/data/folder/" + query.filepath).then(res => {
+    console.log("response: ")
+    console.log(res)
+  })
+
 };
 
 dataHandlers = {};
