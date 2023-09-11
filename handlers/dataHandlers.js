@@ -439,17 +439,62 @@ FSChanged.removed = function(req, res, next) {
     res.send({error: "filepath not canonical"});
     return;
   }
-  console.log("URL DEBUG: " + "http://ca-load:4000/data/folder/" + path.relative(PATH, query.filepath));
-  fetch("http://ca-load:4000/data/folder/" + path.relative(PATH, query.filepath)).then(r => {
-    if (!r.ok) {
-      res.send({error: "path does not exist on the filesystem"});
-      return;
-    }
-    console.log("response: ")
-    console.log(r.ok)
-    r.json().then(x => res.send(x))
-  })
 
+  // The following is complicated due to the current "one file is one entry" schema design
+  // on delete, if there's no file left in folder, consider the entry deleted hence remove from db
+  // if there's any file left, replace the filepath and location to that.
+  fetch("http://ca-load:4000/data/folder/" + path.relative(PATH, query.filepath)).then(r => {
+    (async () => {
+      if (!r.ok) {
+        res.send({error: "path does not exist on the filesystem"});
+        return;
+      }
+      try {
+        r = r.json()
+      } catch(e) {
+        res.send({error: "slideloader failure"});
+        return;
+      }
+      try {
+        var x = await mongoDB.find(db, collection, query)
+      } catch(e) {
+        res.send({error: "mongo failure"});
+        return;
+      }
+      if (r.contents.length == 0) {
+        // delete entries
+        for (const entry of x) {
+          if (JSON.stringify(entry).includes(query.filepath)) {
+            // take _id, remove it
+            try {
+              await mongoDB.delete(db, collection, {"_id": entry._id})
+            } catch (e) {
+              console.log("Debug123")
+            }
+          }
+        }
+      } else {
+        // replace entries with a different file.
+        // any file from the list of remaining files would work
+        var oldFilename = path.basename(query.filepath);
+        var newFileName = r.contents[0];
+        var location = query.filepath.replace(oldFilename, newFileName);
+        var filepath = path.relative(PATH, query.filepath);
+        for (const entry of x) {
+          if (JSON.stringify(entry).includes(query.filepath)) {
+            try {
+              var newVals = {
+                $set: {location: location, filepath: filepath},
+              };
+              await mongoDB.update(db, collection, {"_id": entry._id}, newVals)
+            } catch (e) {
+              console.log("Debug234")
+            }
+          }
+        }
+      }
+    })
+  })();
 };
 
 dataHandlers = {};
