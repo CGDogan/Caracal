@@ -424,7 +424,7 @@ FSChanged.added = function(req, res, next) {
         res.send({error: "SlideLoader error: perhaps the filepath points to an inexistant file?"});
         return;
       }
-      r.json().then(data => {
+      r.json().then((data) => {
         if (data.error) {
           res.send({error: "SlideLoader error: the filepath points to an inexistant file?"});
           return;
@@ -439,7 +439,7 @@ FSChanged.added = function(req, res, next) {
           console.log(e);
         });
       });
-    })
+    });
   }).catch((e) => {
     res.send({error: ""});
   });
@@ -465,69 +465,69 @@ FSChanged.removed = function(req, res, next) {
   // on delete, if there's no file left in folder, consider the entry deleted hence remove from db
   // if there's any file left, replace the filepath and location to that.
   fetch("http://ca-load:4000/data/folder/" + path.relative(PATH, path.dirname(query.filepath)))
-  .catch(e => {
-      res.send({error: "slideloader failure"});
-  }).then(r => {
-    (async () => {
-      if (!r.ok) {
-        res.send({error: "path does not exist on the filesystem"});
-        return;
-      }
-      try {
-        r = await r.json();
-      } catch(e) {
+      .catch((e) => {
         res.send({error: "slideloader failure"});
-        return;
-      }
-      try {
-        var x = await mongoDB.find("camic", "slide");
-      } catch(e) {
-        res.send({error: "mongo failure " });
-        return;
-      }
+    }).then((r) => {
+      (async () => {
+        if (!r.ok) {
+          res.send({error: "path does not exist on the filesystem"});
+          return;
+        }
+        try {
+          r = await r.json();
+        } catch(e) {
+          res.send({error: "slideloader failure"});
+          return;
+        }
+        try {
+          var x = await mongoDB.find("camic", "slide");
+        } catch(e) {
+          res.send({error: "mongo failure " });
+          return;
+        }
 
-      // For both branches below, JSON.stringify(entry).includes(query.filepath) would work.
-      // Expected behavior is: if an entry pointed to it, change it to something else,
-      // but if nothing left in the folder, remove it. This is because readers
-      // need to be pointed to a valid file, any valid file of a series, in a subfolder.
-      // But be more fault tolerant and allow changing current invalid pointers to a valid one in file.
-      var dirname = path.dirname(query.filepath);
+        // For both branches below, JSON.stringify(entry).includes(query.filepath) would work.
+        // Expected behavior is: if an entry pointed to it, change it to something else,
+        // but if nothing left in the folder, remove it. This is because readers
+        // need to be pointed to a valid file, any valid file of a series, in a subfolder.
+        // But be more fault tolerant and allow changing current invalid pointers to a valid one in file.
+        var dirname = path.dirname(query.filepath);
 
-      if (r.contents.length == 0) {
-        // delete entries
-        for (const entry of x) {
-          if (JSON.stringify(entry).includes(dirname)) {
-            // take _id, remove it
-            try {
-              await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid});
-            } catch (e) {
-              console.log(e);
+        if (r.contents.length == 0) {
+          // delete entries
+          for (const entry of x) {
+            if (JSON.stringify(entry).includes(dirname)) {
+              // take _id, remove it
+              try {
+                await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid});
+              } catch (e) {
+                console.log(e);
+              }
             }
           }
-        }
-        res.send({success: "removed entries if any"});
-      } else {
-        // replace entries with a different file.
-        // any file from the list of remaining files would work
-        var oldFilename = path.basename(query.filepath);
-        var newFileName = r.contents[0];
-        var location = query.filepath.replace(oldFilename, newFileName);
-        var filepath = path.relative(PATH, query.filepath);
-        for (const entry of x) {
-          if (JSON.stringify(entry).includes(dirname)) {
-            try {
-              var newVals = {
-                $set: {location: location, filepath: filepath},
-              };
-              await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, newVals);
-            } catch (e) {
-              console.log(e);
+          res.send({success: "removed entries if any"});
+        } else {
+          // replace entries with a different file.
+          // any file from the list of remaining files would work
+          var oldFilename = path.basename(query.filepath);
+          var newFileName = r.contents[0];
+          var location = query.filepath.replace(oldFilename, newFileName);
+          var filepath = path.relative(PATH, query.filepath);
+          for (const entry of x) {
+            if (JSON.stringify(entry).includes(dirname)) {
+              try {
+                var newVals = {
+                  $set: {location: location, filepath: filepath},
+                };
+                await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, newVals);
+              } catch (e) {
+                console.log(e);
+              }
             }
           }
+          res.send({success: "replaced to " + newFileName + " if any entries were found"});
         }
-        res.send({success: "replaced to " + newFileName + " if any entries were found"});
-      }
-    })()
+      })()
   });
 };
 
