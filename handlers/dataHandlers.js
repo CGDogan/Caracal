@@ -441,7 +441,8 @@ FSChanged.removed = function(req, res, next) {
   }
   fetch("http://ca-load:4000/data/folder/" + query.filepath).then(res => {
     console.log("response: ")
-    console.log(res)
+    console.log(res.json())
+    res.send("done")
   })
 
 };
