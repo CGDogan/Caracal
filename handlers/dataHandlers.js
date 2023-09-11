@@ -428,7 +428,7 @@ FSChanged.added = function(req, res, next) {
     }).then(data => {
       if (data.error) {
         res.send("SlideLoader error: the filepath points to an inexistant file?");
-        throw "";
+        return;
       }
       data.filepath = filepath;
       data.location = location;
