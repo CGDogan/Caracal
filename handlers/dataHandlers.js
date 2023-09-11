@@ -417,7 +417,7 @@ FSChanged.added = function(req, res, next) {
     fetch("http://ca-load:4000/data/one/" + location).then(r => {
       if (!r.ok) {
         res.send("SlideLoader error: perhaps the filepath points to an inexistant file?");
-        return;
+        throw "";
       }
       return r.json();
     }).then(data => {
@@ -477,6 +477,10 @@ FSChanged.removed = function(req, res, next) {
       if (r.contents.length == 0) {
         // delete entries
         for (const entry of x) {
+          console.log("checking")
+          console.log(entry)
+          console.log(query.filepath)
+
           if (JSON.stringify(entry).includes(query.filepath)) {
             // take _id, remove it
             try {
