@@ -411,16 +411,26 @@ FSChanged.added = function(req, res, next) {
       res.send({success: "another file from the same subdirectory is already in database"});
       return;
     }
-    var data = {
-      // TODO: add the remaining of the metadata as well
-      filepath: query.filepath,
-      location: path.relative(PATH, query.filepath),
-      name: path.basename(query.filepath),
-    }
-    mongoDB.add(db, collection, data).then((x) => {
-      res.send({success: "added to the database a new file"});
-      return;
-    }).catch((e) => {});
+    var filepath = query.filepath;
+    var location = path.relative(PATH, query.filepath);
+    var name = path.basename(query.filepath);
+    fetch("http://ca-load:4000/data/one/" + location).then(r => {
+      if (!r.ok) {
+        res.send("SlideLoader error: perhaps the filepath points to an inexistant file?");
+        return;
+      }
+      return r.json();
+    }).then(data => {
+      data.filepath = filepath;
+      data.location = location;
+      data.name = name;
+      mongoDB.add(db, collection, data).then((x) => {
+        res.send({success: "added successfully"});
+      }).catch((e) => {
+        res.send({success: "mongo failure"});
+        console.log(e);
+      });
+    })
   }).catch((e) => {});
 };
 
