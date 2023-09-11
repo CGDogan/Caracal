@@ -67,6 +67,9 @@ General.update = function(db, collection) {
     var newVals = {
       $set: JSON.parse(req.body),
     };
+    console.log("update query:")
+    console.log(query)
+    console.log(newVals)
     mongoDB.update(db, collection, query, newVals).then((x) => {
       req.data = x;
       next();
