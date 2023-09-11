@@ -469,7 +469,7 @@ FSChanged.removed = function(req, res, next) {
           if (JSON.stringify(entry).includes(query.filepath)) {
             // take _id, remove it
             try {
-              await mongoDB.delete("camic", "slide", {"_id": entry._id})
+              await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid})
             } catch (e) {
               console.log("Debug123")
             }
@@ -490,10 +490,10 @@ FSChanged.removed = function(req, res, next) {
                 $set: {location: location, filepath: filepath},
               };
               console.log("mongo params:")
-              console.log({_id: entry._id})
+              console.log({_id: entry._id.$oid})
               console.log(newVals)
 
-              await mongoDB.update("camic", "slide", {_id: entry._id}, newVals);
+              await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, newVals);
             } catch (e) {
               console.log("Debug234")
               console.log(e)
