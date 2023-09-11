@@ -458,9 +458,10 @@ FSChanged.removed = function(req, res, next) {
         return;
       }
       try {
-        var x = await mongoDB.find(db, collection, query)
+        var x = await mongoDB.find(db, collection)
       } catch(e) {
-        res.send({error: "mongo failure"});
+        res.send({error: "mongo failure " });
+        console.log(e)
         return;
       }
       if (r.contents.length == 0) {
