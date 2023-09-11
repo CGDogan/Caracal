@@ -475,6 +475,7 @@ FSChanged.removed = function(req, res, next) {
             }
           }
         }
+        res.send({success: "removed entries"});
       } else {
         // replace entries with a different file.
         // any file from the list of remaining files would work
@@ -494,6 +495,7 @@ FSChanged.removed = function(req, res, next) {
             }
           }
         }
+        res.send({success: "replaced to " + newFileName});
       }
     })()
   });
