@@ -439,10 +439,10 @@ FSChanged.removed = function(req, res, next) {
     res.send({error: "filepath not canonical"});
     return;
   }
-  fetch("http://ca-load:4000/data/folder/" + query.filepath).then(res => {
+  fetch("http://ca-load:4000/data/folder/" + query.filepath).then(r => {
     console.log("response: ")
-    console.log(res.json())
-    res.send("done")
+    console.log(r.json())
+    res.send(r.json())
   })
 
 };
