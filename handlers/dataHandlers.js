@@ -67,9 +67,6 @@ General.update = function(db, collection) {
     var newVals = {
       $set: JSON.parse(req.body),
     };
-    console.log("update query:")
-    console.log(query)
-    console.log(newVals)
     mongoDB.update(db, collection, query, newVals).then((x) => {
       req.data = x;
       next();
@@ -492,7 +489,11 @@ FSChanged.removed = function(req, res, next) {
               var newVals = {
                 $set: {location: location, filepath: filepath},
               };
-              await mongoDB.update("camic", "slide", {"_id": entry._id}, newVals)
+              console.log("mongo params:")
+              console.log({_id: entry._id})
+              console.log(newVals)
+
+              await mongoDB.update("camic", "slide", {_id: entry._id}, newVals);
             } catch (e) {
               console.log("Debug234")
             }
