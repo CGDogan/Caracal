@@ -452,19 +452,17 @@ FSChanged.removed = function(req, res, next) {
         return;
       }
       try {
-        r = r.json()
+        r = await r.json();
       } catch(e) {
         res.send({error: "slideloader failure"});
         return;
       }
       try {
-        var x = await mongoDB.find("camic", "slide")
+        var x = await mongoDB.find("camic", "slide");
       } catch(e) {
         res.send({error: "mongo failure " });
         return;
       }
-      console.log("This is res:")
-      console.log(r)
       if (r.contents.length == 0) {
         // delete entries
         for (const entry of x) {
