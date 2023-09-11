@@ -474,14 +474,18 @@ FSChanged.removed = function(req, res, next) {
         res.send({error: "mongo failure " });
         return;
       }
+
+      // For both branches below, JSON.stringify(entry).includes(query.filepath) would work.
+      // Expected behavior is: if an entry pointed to it, change it to something else,
+      // but if nothing left in the folder, remove it. This is because readers
+      // need to be pointed to a valid file, any valid file of a series, in a subfolder.
+      // But be more fault tolerant and allow changing current invalid pointers to a valid one in file.
+      var dirname = path.dirname(query.filepath)
+
       if (r.contents.length == 0) {
         // delete entries
         for (const entry of x) {
-          console.log("checking")
-          console.log(entry)
-          console.log(query.filepath)
-
-          if (JSON.stringify(entry).includes(query.filepath)) {
+          if (JSON.stringify(entry).includes(dirname)) {
             // take _id, remove it
             try {
               await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid})
@@ -499,7 +503,7 @@ FSChanged.removed = function(req, res, next) {
         var location = query.filepath.replace(oldFilename, newFileName);
         var filepath = path.relative(PATH, query.filepath);
         for (const entry of x) {
-          if (JSON.stringify(entry).includes(query.filepath)) {
+          if (JSON.stringify(entry).includes(dirname)) {
             try {
               var newVals = {
                 $set: {location: location, filepath: filepath},
