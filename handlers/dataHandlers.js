@@ -461,10 +461,16 @@ FSChanged.removed = function(req, res, next) {
     return;
   }
 
+  var relpath = path.relative(PATH, path.dirname(query.filepath));
+  if (relpath == '.') {
+    res.send({error: "multifile operations must be done in subdirectories"});
+    return;
+  }
+
   // The following is complicated due to the current "one file is one entry" schema design
   // on delete, if there's no file left in folder, consider the entry deleted hence remove from db
   // if there's any file left, replace the filepath and location to that.
-  fetch("http://ca-load:4000/data/folder/" + path.relative(PATH, path.dirname(query.filepath)))
+  fetch("http://ca-load:4000/data/folder/" + relpath)
       .catch((e) => {
         res.send({error: "slideloader failure"});
     }).then((r) => {
