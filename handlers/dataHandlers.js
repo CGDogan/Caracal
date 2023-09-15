@@ -380,12 +380,11 @@ User.wcido = function(req, res, next) {
 
 var FSChanged = {};
 
-const PATH = "/images";
-
 function badPath(path) {
   if (path.includes("..")) return true;
   if (path.includes("/./")) return true;
   if (path.includes("//")) return true;
+  if (path.startsWith(".")) return true;
   return false;
 }
 
@@ -395,12 +394,12 @@ FSChanged.added = function(req, res, next) {
     res.send({error: "filepath parameter undefined"});
     return;
   }
-  if (query.filepath == '' || query.filepath.endsWith("/") || !query.filepath.startsWith(PATH)) {
-    res.send({error: "expected a path to a file in " + PATH});
+  if (query.filepath == '' || query.filepath.endsWith("/") || query.filepath.startsWith("/")) {
+    res.send({error: "expected a relative path to an image file"});
     return;
   }
   if (badPath(query.filepath)) {
-    res.send({error: "filepath not canonical"});
+    res.send({error: "filepath not canonical or invalid"});
     return;
   }
   mongoDB.find("camic", "slide").then((x) => {
@@ -408,18 +407,33 @@ FSChanged.added = function(req, res, next) {
     // otherwise, add it as a new entry
     var parentDir = path.dirname(query.filepath);
 
+    var identifier;
+    if (parentDir == '.') {
+      // This is a single file not in any subfolder, and does not have companion files
+      identifier = query.filepath
+    } else {
+      // This is a file in a subdirectory.
+      // caMicroscope design decision: every subdir in the images directory is one image
+      // so traverse up if needed.
+      do {
+        identifier = parentDir;
+        parentDir = path.dirname(parentDir);
+      } while(parentDir != '.');
+    }
+
     // Here, we can be more fault tolerant and handle the case that despite still being an entry,
     // it was somehow deleted from the filesystem.
     // It may be replaced with any other file in the folder or the user requested path
     // given that we verify that it exists.
-    if (JSON.stringify(x).includes(parentDir)) {
+    // but that's the purpose of FSChanged.removed
+    if (JSON.stringify(x).includes(identifier)) {
+      // Success, to allow the client to notify for every new file, even if that won't make a new series.
       res.send({success: "another file from the same subdirectory is already in database"});
       return;
     }
     var filepath = query.filepath;
-    var location = path.relative(PATH, query.filepath);
-    var name = path.basename(query.filepath);
-    fetch("http://ca-load:4000/data/one/" + location).then((r) => {
+    var name = path.basename(filepath);
+    fetch("http://ca-load:4000/data/one/" + filepath).then((r) => {
       if (!r.ok) {
         res.send({error: "SlideLoader error: perhaps the filepath points to an inexistant file?"});
         return;
@@ -430,12 +444,11 @@ FSChanged.added = function(req, res, next) {
           return;
         }
         data.filepath = filepath;
-        data.location = location;
         data.name = name;
         mongoDB.add("camic", "slide", data).then((x) => {
           res.send({success: "added successfully"});
         }).catch((e) => {
-          res.send({success: "mongo failure"});
+          res.send({error: "mongo failure"});
           console.log(e);
         });
       });
@@ -452,19 +465,38 @@ FSChanged.removed = function(req, res, next) {
     res.send({error: "filepath parameter undefined"});
     return;
   }
-  if (query.filepath == '' || query.filepath.endsWith("/") || !query.filepath.startsWith(PATH)) {
-    res.send({error: "expected a path to a file in " + PATH});
+  if (query.filepath == '' || query.filepath.endsWith("/") || query.filepath.startsWith("/")) {
+    res.send({error: "expected a relative path to an image file"});
     return;
   }
   if (badPath(query.filepath)) {
-    res.send({error: "filepath not canonical"});
+    res.send({error: "filepath not canonical or invalid"});
     return;
   }
 
-  var relpath = path.relative(PATH, path.dirname(query.filepath));
-  if (relpath == '.') {
-    res.send({error: "multifile operations must be done in subdirectories"});
-    return;
+  // true: replace entries
+  // false: delete entries
+  var replace = true;
+  var identifier;
+
+  var parentDir = path.parentDir(query.filepath)
+  if (parentDir == '.') {
+    replace = false;
+    identifier = query.filepath;
+    // check if file exist. if so, return error. If it does not, delete entries with identifier.
+
+
+  } else {
+    // This is a file in a subdirectory.
+    // caMicroscope design decision: every subdir in the images directory is one image
+    // so traverse up if needed.
+    do {
+      identifier = parentDir;
+      parentDir = path.dirname(parentDir);
+    } while(parentDir != '.');
+    // get folder contents, see if still a file.
+    // if it is, error. if not, pick any from the array and note that checking if it's a directory
+    // would be better
   }
 
   // The following is complicated due to the current "one file is one entry" schema design
@@ -517,6 +549,8 @@ FSChanged.removed = function(req, res, next) {
           // any file from the list of remaining files would work
           var oldFilename = path.basename(query.filepath);
           var newFileName = r.contents[0];
+          // TODO: here it would be better to check if this is a folder and if it's a folder
+          // use any tree search to find a file and if none check other r.contents entries
           var location = query.filepath.replace(oldFilename, newFileName);
           var filepath = path.relative(PATH, query.filepath);
           for (const entry of x) {
