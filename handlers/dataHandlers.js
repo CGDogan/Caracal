@@ -474,30 +474,107 @@ FSChanged.removed = function(req, res, next) {
     return;
   }
 
-  // true: replace entries
-  // false: delete entries
-  var replace = true;
-  var identifier;
+  (async () => {
+    // true: replace entries
+    // false: delete entries
+    var replace;
+    var identifier; // scanning pattern
+    var replacer; // MongoDB object
 
-  var parentDir = path.parentDir(query.filepath)
-  if (parentDir == '.') {
-    replace = false;
-    identifier = query.filepath;
-    // check if file exist. if so, return error. If it does not, delete entries with identifier.
+    var parentDir = path.parentDir(query.filepath)
+    if (parentDir == '.') {
+      // file in the top level folder
+      // check if file exists. if so, return error. If it does not, delete entries with identifier.
+      replace = false;
+      identifier = query.filepath;
+      try {
+        var metadata = await fetch("http://ca-load:4000/data/one/" + identifier)
+        metadata = await metadata.json();
+      } catch(e) {
+        res.send({error: "slideloader failure"});
+        console.log(e);
+        return;
+      }
+      if (!metadata.hasOwnProperty("error")) {
+        res.send({error: "file " + query.filepath + " still exists"});
+        return;
+      }
+    } else {
+      // This is a file in a subdirectory.
+      // caMicroscope design decision: every subdir in the images directory is one image
+      // so traverse up if needed.
+      do {
+        identifier = parentDir;
+        parentDir = path.dirname(parentDir);
+      } while(parentDir != '.');
+      var basename = path.basename(query.filepath);
+      // get folder contents, see if still a file.
+      // if it is, error. if not, pick any from the array and note that checking if it's a directory
+      // would be better. if no other files in the folder, delete db entries
+      try {
+        var contents = await fetch("http://ca-load:4000/data/folder/" + identifier);
+        contents = await contents.json();
+        contents = contents.contents;
+      } catch(e) {
+        res.send({error: "slideloader failure"});
+        console.log(e);
+        return;
+      }
+      if (contents.includes(basename)) {
+        res.send({error: "file " + query.filepath + " still exists"});
+        return;
+      }
+      if (contents.length == 0) {
+        // Delete DB entries
+        replace = false;
+      } else {
+        // Replace DB entries
+        replace = true;
+        // TODO: here it would be better to check if this is a folder and if it's a folder
+        // use any tree search to find a file and if none check other r.contents entries
+        var newFilePath = identifier + '/' + contents[0];
+        try {
+          replacer = await fetch("http://ca-load:4000/data/one/" + newFilePath);
+          replacer = {$set: replacer}
+        } catch(e) {
+          res.send({error: "slideloader failure"});
+          console.log(e);
+          return;
+        }
+      }
+    }
 
+    if (replace) {
+      try {
+        var slides = await mongoDB.find("camic", "slide");
+      } catch(e) {
+        res.send({error: "mongo failure"});
+        console.log(e);
+        return;
+      }
 
-  } else {
-    // This is a file in a subdirectory.
-    // caMicroscope design decision: every subdir in the images directory is one image
-    // so traverse up if needed.
-    do {
-      identifier = parentDir;
-      parentDir = path.dirname(parentDir);
-    } while(parentDir != '.');
-    // get folder contents, see if still a file.
-    // if it is, error. if not, pick any from the array and note that checking if it's a directory
-    // would be better
-  }
+      for (const entry of slides) {
+        if (JSON.stringify(entry).includes(identifier)) {
+          try {
+            await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid});
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      }
+      res.send({success: "removed entries if any"});
+    } else {
+      for (const entry of slides) {
+        if (JSON.stringify(entry).includes(identifier)) {
+          try {
+            await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, replacer);
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      }
+      res.send({success: "replaced to if any entries were found"});
+    }
 
   // The following is complicated due to the current "one file is one entry" schema design
   // on delete, if there's no file left in folder, consider the entry deleted hence remove from db
@@ -549,8 +626,6 @@ FSChanged.removed = function(req, res, next) {
           // any file from the list of remaining files would work
           var oldFilename = path.basename(query.filepath);
           var newFileName = r.contents[0];
-          // TODO: here it would be better to check if this is a folder and if it's a folder
-          // use any tree search to find a file and if none check other r.contents entries
           var location = query.filepath.replace(oldFilename, newFileName);
           var filepath = path.relative(PATH, query.filepath);
           for (const entry of x) {
@@ -569,6 +644,7 @@ FSChanged.removed = function(req, res, next) {
         }
       })()
   });
+  })();
 };
 
 dataHandlers = {};
