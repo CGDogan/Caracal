@@ -426,7 +426,7 @@ FSChanged.added = function(req, res) {
     // It may be replaced with any other file in the folder or the user requested path
     // given that we verify that it exists.
     // but that's the purpose of FSChanged.removed
-    if (JSON.stringify(slides).includes(identifier)) {
+    if (slides.some((s) => (s["filepath"] || "").includes(identifier))) {
       console.log("DEBUGME0: ")
       console.log(JSON.stringify(slides))
       // Success, to allow the client to notify for every new file, even if that won't make a new series.
