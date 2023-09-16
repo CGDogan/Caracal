@@ -493,7 +493,6 @@ FSChanged.removed = function(req, res) {
     }
 
     var parentDir = path.dirname(query.filepath);
-        console.log("DELETEME DEBUG1")
     if (parentDir == '.') {
       // file in the top level folder
       // Delete entries with identifier.
@@ -513,9 +512,6 @@ FSChanged.removed = function(req, res) {
       try {
         var contents = await fetch("http://ca-load:4000/data/folder/" + identifier);
         contents = await contents.json();
-        console.log("DELETEME DEBUG folder contents")
-        console.log(contents.contents)
-
         contents = contents.contents;
       } catch(e) {
         res.send({error: "slideloader failure"});
@@ -559,17 +555,6 @@ FSChanged.removed = function(req, res) {
       for (const entry of slides) {
         if (JSON.stringify(entry).includes(identifier)) {
           try {
-            await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid});
-          } catch (e) {
-            console.log(e);
-          }
-        }
-      }
-      res.send({success: "removed entries if any"});
-    } else {
-      for (const entry of slides) {
-        if (JSON.stringify(entry).includes(identifier)) {
-          try {
             await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, replacer);
           } catch (e) {
             console.log(e);
@@ -577,6 +562,17 @@ FSChanged.removed = function(req, res) {
         }
       }
       res.send({success: "replaced if any entries were found"});
+    } else {
+      for (const entry of slides) {
+        if (JSON.stringify(entry).includes(identifier)) {
+          try {
+            await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid});
+          } catch (e) {
+            console.log(e);
+          }
+        }
+      }
+      res.send({success: "removed entries if any"});
     }
   })();
 };
