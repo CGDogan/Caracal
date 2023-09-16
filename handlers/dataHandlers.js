@@ -493,6 +493,7 @@ FSChanged.removed = function(req, res) {
     }
 
     var parentDir = path.dirname(query.filepath);
+        console.log("DELETEME DEBUG1")
     if (parentDir == '.') {
       // file in the top level folder
       // Delete entries with identifier.
