@@ -567,7 +567,10 @@ FSChanged.removed = function(db, collection, loader) {
         res.send({success: "replaced if any entries were found"});
       } else {
         for (const entry of slides) {
+            console.log("CHECK BRANCH")
+
           if (entry["filepath"] && entry["filepath"].includes(identifier)) {
+            console.log("REQUIRED BRANCH")
             try {
               await mongoDB.delete("camic", "collection", {"_id": entry._id.$oid});
             } catch (e) {
