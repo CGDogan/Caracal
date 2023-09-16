@@ -574,7 +574,7 @@ FSChanged.removed = function(db, collection, loader) {
             console.log("H:")
             console.log(entry._id.$oid)
             try {
-              await mongoDB.delete("camic", "collection", {"_id": entry._id.$oid});
+              await mongoDB.delete(db, collection, {"_id": entry._id.$oid});
             } catch (e) {
               console.log(e);
             }
