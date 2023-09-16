@@ -427,6 +427,8 @@ FSChanged.added = function(req, res) {
     // given that we verify that it exists.
     // but that's the purpose of FSChanged.removed
     if (JSON.stringify(slides).includes(identifier)) {
+      console.log("DEBUGME: ")
+      console.log(JSON.stringify(slides))
       // Success, to allow the client to notify for every new file, even if that won't make a new series.
       res.send({success: "another file from the same subdirectory is already in database"});
       return;
@@ -553,6 +555,8 @@ FSChanged.removed = function(req, res) {
 
     if (replace) {
       for (const entry of slides) {
+              console.log("DEBUGME: ")
+      console.log(JSON.stringify(entry))
         if (JSON.stringify(entry).includes(identifier)) {
           try {
             await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, replacer);
@@ -564,6 +568,8 @@ FSChanged.removed = function(req, res) {
       res.send({success: "replaced if any entries were found"});
     } else {
       for (const entry of slides) {
+              console.log("DEBUGME: ")
+      console.log(JSON.stringify(entry))
         if (JSON.stringify(entry).includes(identifier)) {
           try {
             await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid});
