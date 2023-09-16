@@ -410,7 +410,7 @@ FSChanged.added = function(req, res) {
     var identifier;
     if (parentDir == '.') {
       // This is a single file not in any subfolder, and does not have companion files
-      identifier = query.filepath
+      identifier = query.filepath;
     } else {
       // This is a file in a subdirectory.
       // caMicroscope design decision: every subdir in the images directory is one image
@@ -418,7 +418,7 @@ FSChanged.added = function(req, res) {
       do {
         identifier = parentDir;
         parentDir = path.dirname(parentDir);
-      } while(parentDir != '.');
+      } while (parentDir != '.');
     }
 
     // Here, we can be more fault tolerant and handle the case that despite still being an entry,
@@ -482,7 +482,7 @@ FSChanged.removed = function(req, res) {
     try {
       var metadata = await fetch("http://ca-load:4000/data/one/" + query.filepath);
       metadata = await metadata.json();
-    } catch(e) {
+    } catch (e) {
       res.send({error: "slideloader failure"});
       console.log(e);
       return;
@@ -505,7 +505,7 @@ FSChanged.removed = function(req, res) {
       do {
         identifier = parentDir;
         parentDir = path.dirname(parentDir);
-      } while(parentDir != '.');
+      } while (parentDir != '.');
       var basename = path.basename(query.filepath);
       // get folder contents. Pick any replacements from the array.
       // if no other files in the folder, delete db entries
@@ -513,7 +513,7 @@ FSChanged.removed = function(req, res) {
         var contents = await fetch("http://ca-load:4000/data/folder/" + identifier);
         contents = await contents.json();
         contents = contents.contents;
-      } catch(e) {
+      } catch (e) {
         res.send({error: "slideloader failure"});
         console.log(e);
         return;
@@ -529,7 +529,7 @@ FSChanged.removed = function(req, res) {
         var newFilePath = identifier + '/' + contents[0];
         try {
           replacer = await fetch("http://ca-load:4000/data/one/" + newFilePath);
-        } catch(e) {
+        } catch (e) {
           res.send({error: "slideloader failure"});
           console.log(e);
           return;
@@ -539,13 +539,13 @@ FSChanged.removed = function(req, res) {
           res.send({error: "picked " + newFilePath + " which could not be reader"});
           return;
         }
-        replacer = {$set: replacer}
+        replacer = {$set: replacer};
       }
     }
 
     try {
       var slides = await mongoDB.find("camic", "slide");
-    } catch(e) {
+    } catch (e) {
       res.send({error: "mongo failure"});
       console.log(e);
       return;
