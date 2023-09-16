@@ -567,8 +567,12 @@ FSChanged.removed = function(db, collection, loader) {
         }
         res.send({success: "replaced if any entries were found"});
       } else {
+        console.log("DEBUGME")
+        console.log(slides)
         for (const entry of slides) {
           if (entry["filepath"] && entry["filepath"].includes(identifier)) {
+            console.log("H:")
+            console.log(entry._id.$oid)
             try {
               await mongoDB.delete("camic", "collection", {"_id": entry._id.$oid});
             } catch (e) {
