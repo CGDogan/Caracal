@@ -478,24 +478,26 @@ FSChanged.removed = function(req, res) {
     var replace; // true: replace entries. false: delete entries.
     var replacer; // MongoDB object
 
+    // check that the file doesn't exist
+    try {
+      var metadata = await fetch("http://ca-load:4000/data/one/" + query.filepath);
+      metadata = await metadata.json();
+    } catch(e) {
+      res.send({error: "slideloader failure"});
+      console.log(e);
+      return;
+    }
+    if (!metadata.hasOwnProperty("error")) {
+      res.send({error: "file " + query.filepath + " still exists"});
+      return;
+    }
+
     var parentDir = path.dirname(query.filepath);
     if (parentDir == '.') {
       // file in the top level folder
-      // check if file exists. if so, return error. If it does not, delete entries with identifier.
+      // Delete entries with identifier.
       replace = false;
       identifier = query.filepath;
-      try {
-        var metadata = await fetch("http://ca-load:4000/data/one/" + identifier);
-        metadata = await metadata.json();
-      } catch(e) {
-        res.send({error: "slideloader failure"});
-        console.log(e);
-        return;
-      }
-      if (!metadata.hasOwnProperty("error")) {
-        res.send({error: "file " + query.filepath + " still exists"});
-        return;
-      }
     } else {
       // This is a file in a subdirectory.
       // caMicroscope design decision: every subdir in the images directory is one image
@@ -505,9 +507,8 @@ FSChanged.removed = function(req, res) {
         parentDir = path.dirname(parentDir);
       } while(parentDir != '.');
       var basename = path.basename(query.filepath);
-      // get folder contents, see if still a file.
-      // if it is, error. if not, pick any from the array and note that checking if it's a directory
-      // would be better. if no other files in the folder, delete db entries
+      // get folder contents. Pick any replacements from the array.
+      // if no other files in the folder, delete db entries
       try {
         var contents = await fetch("http://ca-load:4000/data/folder/" + identifier);
         contents = await contents.json();
@@ -515,10 +516,6 @@ FSChanged.removed = function(req, res) {
       } catch(e) {
         res.send({error: "slideloader failure"});
         console.log(e);
-        return;
-      }
-      if (contents.includes(basename)) {
-        res.send({error: "file " + query.filepath + " still exists"});
         return;
       }
       if (contents.length == 0) {
