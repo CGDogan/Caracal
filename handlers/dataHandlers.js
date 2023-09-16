@@ -512,6 +512,9 @@ FSChanged.removed = function(req, res) {
       try {
         var contents = await fetch("http://ca-load:4000/data/folder/" + identifier);
         contents = await contents.json();
+        console.log("DELETEME DEBUG folder contents")
+        console.log(contents.contents)
+
         contents = contents.contents;
       } catch(e) {
         res.send({error: "slideloader failure"});
