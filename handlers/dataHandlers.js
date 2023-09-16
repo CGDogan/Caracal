@@ -388,73 +388,75 @@ function badPath(path) {
   return false;
 }
 
-FSChanged.added = function(req, res) {
-  var query = req.query;
-  if (!query.hasOwnProperty("filepath")) {
-    res.send({error: "filepath parameter undefined"});
-    return;
-  }
-  if (query.filepath == '' || query.filepath.endsWith("/") || query.filepath.startsWith("/")) {
-    res.send({error: "expected a relative path to an image file"});
-    return;
-  }
-  if (badPath(query.filepath)) {
-    res.send({error: "filepath not canonical or invalid"});
-    return;
-  }
-  mongoDB.find("camic", "slide").then((slides) => {
-    // If contains any file from the parent path, do nothing.
-    // otherwise, add it as a new entry
-    var parentDir = path.dirname(query.filepath);
-
-    var identifier;
-    if (parentDir == '.') {
-      // This is a single file not in any subfolder, and does not have companion files
-      identifier = query.filepath;
-    } else {
-      // This is a file in a subdirectory.
-      // caMicroscope design decision: every subdir in the images directory is one image
-      // so traverse up if needed.
-      do {
-        identifier = parentDir;
-        parentDir = path.dirname(parentDir);
-      } while (parentDir != '.');
-    }
-
-    // Here, we can be more fault tolerant and handle the case that despite still being an entry,
-    // it was somehow deleted from the filesystem.
-    // It may be replaced with any other file in the folder or the user requested path
-    // given that we verify that it exists.
-    // but that's the purpose of FSChanged.removed
-    if (slides.some((s) => s["filepath"] && s["filepath"].includes(identifier))) {
-      // Success, to allow the client to notify for every new file, even if that won't make a new series.
-      res.send({success: "another file from the same subdirectory is already in database"});
+FSChanged.added = function(db, collection) {
+  return function(req, res) {
+    var query = req.query;
+    if (!query.hasOwnProperty("filepath")) {
+      res.send({error: "filepath parameter undefined"});
       return;
     }
-    var filepath = query.filepath;
-    var name = path.basename(filepath);
-    fetch("http://ca-load:4000/data/one/" + filepath).then((r) => {
-      if (!r.ok) {
-        res.send({error: "SlideLoader error: perhaps the filepath points to an inexistant file?"});
+    if (query.filepath == '' || query.filepath.endsWith("/") || query.filepath.startsWith("/")) {
+      res.send({error: "expected a relative path to an image file"});
+      return;
+    }
+    if (badPath(query.filepath)) {
+      res.send({error: "filepath not canonical or invalid"});
+      return;
+    }
+    mongoDB.find(db, collection).then((slides) => {
+      // If contains any file from the parent path, do nothing.
+      // otherwise, add it as a new entry
+      var parentDir = path.dirname(query.filepath);
+
+      var identifier;
+      if (parentDir == '.') {
+        // This is a single file not in any subfolder, and does not have companion files
+        identifier = query.filepath;
+      } else {
+        // This is a file in a subdirectory.
+        // caMicroscope design decision: every subdir in the images directory is one image
+        // so traverse up if needed.
+        do {
+          identifier = parentDir;
+          parentDir = path.dirname(parentDir);
+        } while (parentDir != '.');
+      }
+
+      // Here, we can be more fault tolerant and handle the case that despite still being an entry,
+      // it was somehow deleted from the filesystem.
+      // It may be replaced with any other file in the folder or the user requested path
+      // given that we verify that it exists.
+      // but that's the purpose of FSChanged.removed
+      if (slides.some((s) => s["filepath"] && s["filepath"].includes(identifier))) {
+        // Success, to allow the client to notify for every new file, even if that won't make a new series.
+        res.send({success: "another file from the same subdirectory is already in database"});
         return;
       }
-      r.json().then((data) => {
-        if (data.error) {
-          res.send({error: "SlideLoader error: the filepath points to an inexistant file?"});
+      var filepath = query.filepath;
+      var name = path.basename(filepath);
+      fetch("http://ca-load:4000/data/one/" + filepath).then((r) => {
+        if (!r.ok) {
+          res.send({error: "SlideLoader error: perhaps the filepath points to an inexistant file?"});
           return;
         }
-        data.name = name;
-        mongoDB.add("camic", "slide", data).then(() => {
-          res.send({success: "added successfully"});
-        }).catch((e) => {
-          res.send({error: "mongo failure"});
-          console.log(e);
+        r.json().then((data) => {
+          if (data.error) {
+            res.send({error: "SlideLoader error: the filepath points to an inexistant file?"});
+            return;
+          }
+          data.name = name;
+          mongoDB.add("camic", "slide", data).then(() => {
+            res.send({success: "added successfully"});
+          }).catch((e) => {
+            res.send({error: "mongo failure"});
+            console.log(e);
+          });
         });
       });
+    }).catch((e) => {
+      res.send({error: ""});
     });
-  }).catch((e) => {
-    res.send({error: ""});
-  });
+  };
 };
 
 
