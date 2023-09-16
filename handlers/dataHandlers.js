@@ -388,7 +388,7 @@ function badPath(path) {
   return false;
 }
 
-FSChanged.added = function(db, collection) {
+FSChanged.added = function(db, collection, loader) {
   return function(req, res) {
     var query = req.query;
     if (!query.hasOwnProperty("filepath")) {
@@ -434,7 +434,7 @@ FSChanged.added = function(db, collection) {
       }
       var filepath = query.filepath;
       var name = path.basename(filepath);
-      fetch("http://ca-load:4000/data/one/" + filepath).then((r) => {
+      fetch(loader + "/data/one/" + filepath).then((r) => {
         if (!r.ok) {
           res.send({error: "SlideLoader error: perhaps the filepath points to an inexistant file?"});
           return;
@@ -445,7 +445,7 @@ FSChanged.added = function(db, collection) {
             return;
           }
           data.name = name;
-          mongoDB.add("camic", "slide", data).then(() => {
+          mongoDB.add(db, collection, data).then(() => {
             res.send({success: "added successfully"});
           }).catch((e) => {
             res.send({error: "mongo failure"});
