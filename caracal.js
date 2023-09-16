@@ -126,9 +126,7 @@ var HANDLERS = {
     return dataHandlers.Presetlabels.remove;
   },
   "addedFileToFS": dataHandlers.FSChanged.added,
-  "removedFileFromFS": function() {
-    return dataHandlers.FSChanged.removed;
-  },
+  "removedFileFromFS": dataHandlers.FSChanged.removed,
 };
 
 // TODO! -- remove these by fully depreciating tfjs serverside
