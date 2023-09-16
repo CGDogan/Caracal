@@ -460,123 +460,125 @@ FSChanged.added = function(db, collection, loader) {
 };
 
 
-FSChanged.removed = function(req, res) {
-  var query = req.query;
-  if (!query.hasOwnProperty("filepath")) {
-    res.send({error: "filepath parameter undefined"});
-    return;
-  }
-  if (query.filepath == '' || query.filepath.endsWith("/") || query.filepath.startsWith("/")) {
-    res.send({error: "expected a relative path to an image file"});
-    return;
-  }
-  if (badPath(query.filepath)) {
-    res.send({error: "filepath not canonical or invalid"});
-    return;
-  }
-
-  (async () => {
-    var identifier; // scanning pattern
-    var replace; // true: replace entries. false: delete entries.
-    var replacer; // MongoDB object
-
-    // check that the file doesn't exist
-    try {
-      var metadata = await fetch("http://ca-load:4000/data/one/" + query.filepath);
-      metadata = await metadata.json();
-    } catch (e) {
-      res.send({error: "slideloader failure"});
-      console.log(e);
+FSChanged.removed = function(db, collection, loader) {
+  return function(req, res) {
+    var query = req.query;
+    if (!query.hasOwnProperty("filepath")) {
+      res.send({error: "filepath parameter undefined"});
       return;
     }
-    if (!metadata.hasOwnProperty("error")) {
-      res.send({error: "file " + query.filepath + " still exists"});
+    if (query.filepath == '' || query.filepath.endsWith("/") || query.filepath.startsWith("/")) {
+      res.send({error: "expected a relative path to an image file"});
+      return;
+    }
+    if (badPath(query.filepath)) {
+      res.send({error: "filepath not canonical or invalid"});
       return;
     }
 
-    var parentDir = path.dirname(query.filepath);
-    if (parentDir == '.') {
-      // file in the top level folder
-      // Delete entries with identifier.
-      replace = false;
-      identifier = query.filepath;
-    } else {
-      // This is a file in a subdirectory.
-      // caMicroscope design decision: every subdir in the images directory is one image
-      // so traverse up if needed.
-      do {
-        identifier = parentDir;
-        parentDir = path.dirname(parentDir);
-      } while (parentDir != '.');
-      var basename = path.basename(query.filepath);
-      // get folder contents. Pick any replacements from the array.
-      // if no other files in the folder, delete db entries
+    (async () => {
+      var identifier; // scanning pattern
+      var replace; // true: replace entries. false: delete entries.
+      var replacer; // MongoDB object
+
+      // check that the file doesn't exist
       try {
-        var contents = await fetch("http://ca-load:4000/data/folder/" + identifier);
-        contents = await contents.json();
-        contents = contents.contents;
+        var metadata = await fetch(loader + "/data/one/" + query.filepath);
+        metadata = await metadata.json();
       } catch (e) {
         res.send({error: "slideloader failure"});
         console.log(e);
         return;
       }
-      if (contents.length == 0) {
-        // Delete DB entries
+      if (!metadata.hasOwnProperty("error")) {
+        res.send({error: "file " + query.filepath + " still exists"});
+        return;
+      }
+
+      var parentDir = path.dirname(query.filepath);
+      if (parentDir == '.') {
+        // file in the top level folder
+        // Delete entries with identifier.
         replace = false;
+        identifier = query.filepath;
       } else {
-        // Replace DB entries
-        replace = true;
-        // TODO: here it would be better to check if this is a folder and if it's a folder
-        // use any tree search to find a file and if none check other r.contents entries
-        var newFilePath = identifier + '/' + contents[0];
+        // This is a file in a subdirectory.
+        // caMicroscope design decision: every subdir in the images directory is one image
+        // so traverse up if needed.
+        do {
+          identifier = parentDir;
+          parentDir = path.dirname(parentDir);
+        } while (parentDir != '.');
+        var basename = path.basename(query.filepath);
+        // get folder contents. Pick any replacements from the array.
+        // if no other files in the folder, delete db entries
         try {
-          replacer = await fetch("http://ca-load:4000/data/one/" + newFilePath);
+          var contents = await fetch(loader + "/data/folder/" + identifier);
+          contents = await contents.json();
+          contents = contents.contents;
         } catch (e) {
           res.send({error: "slideloader failure"});
           console.log(e);
           return;
         }
-        if (replacer.hasOwnProperty("error")) {
-          // See the TODO above
-          res.send({error: "picked " + newFilePath + " which could not be reader"});
-          return;
-        }
-        replacer = {$set: replacer};
-      }
-    }
-
-    try {
-      var slides = await mongoDB.find("camic", "slide");
-    } catch (e) {
-      res.send({error: "mongo failure"});
-      console.log(e);
-      return;
-    }
-
-    if (replace) {
-      for (const entry of slides) {
-        if (entry["filepath"] && entry["filepath"].includes(identifier)) {
+        if (contents.length == 0) {
+          // Delete DB entries
+          replace = false;
+        } else {
+          // Replace DB entries
+          replace = true;
+          // TODO: here it would be better to check if this is a folder and if it's a folder
+          // use any tree search to find a file and if none check other r.contents entries
+          var newFilePath = identifier + '/' + contents[0];
           try {
-            await mongoDB.update("camic", "slide", {_id: entry._id.$oid}, replacer);
+            replacer = await fetch(loader + "/data/one/" + newFilePath);
           } catch (e) {
+            res.send({error: "slideloader failure"});
             console.log(e);
+            return;
+          }
+          if (replacer.hasOwnProperty("error")) {
+            // See the TODO above
+            res.send({error: "picked " + newFilePath + " which could not be reader"});
+            return;
+          }
+          replacer = {$set: replacer};
+        }
+      }
+
+      try {
+        var slides = await mongoDB.find(db, collection);
+      } catch (e) {
+        res.send({error: "mongo failure"});
+        console.log(e);
+        return;
+      }
+
+      if (replace) {
+        for (const entry of slides) {
+          if (entry["filepath"] && entry["filepath"].includes(identifier)) {
+            try {
+              await mongoDB.update(db, collection, {_id: entry._id.$oid}, replacer);
+            } catch (e) {
+              console.log(e);
+            }
           }
         }
-      }
-      res.send({success: "replaced if any entries were found"});
-    } else {
-      for (const entry of slides) {
-        if (entry["filepath"] && entry["filepath"].includes(identifier)) {
-          try {
-            await mongoDB.delete("camic", "slide", {"_id": entry._id.$oid});
-          } catch (e) {
-            console.log(e);
+        res.send({success: "replaced if any entries were found"});
+      } else {
+        for (const entry of slides) {
+          if (entry["filepath"] && entry["filepath"].includes(identifier)) {
+            try {
+              await mongoDB.delete("camic", "collection", {"_id": entry._id.$oid});
+            } catch (e) {
+              console.log(e);
+            }
           }
         }
+        res.send({success: "removed entries if any"});
       }
-      res.send({success: "removed entries if any"});
-    }
-  })();
+    })();
+  };
 };
 
 dataHandlers = {};
