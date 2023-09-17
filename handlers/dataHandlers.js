@@ -542,7 +542,6 @@ FSChanged.removed = function(db, collection, loader) {
             res.send({error: "picked " + newFilePath + " which could not be reader"});
             return;
           }
-          replacer.name = metadata.name;
           replacer = {$set: replacer};
         }
       }
@@ -559,6 +558,7 @@ FSChanged.removed = function(db, collection, loader) {
         for (const entry of slides) {
           if (entry["filepath"] && entry["filepath"].includes(identifier)) {
             try {
+              replacer.name = entry.name;
               await mongoDB.update(db, collection, {_id: entry._id.$oid}, replacer);
             } catch (e) {
               console.log(e);
