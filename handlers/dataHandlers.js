@@ -558,6 +558,7 @@ FSChanged.removed = function(db, collection, loader) {
         for (const entry of slides) {
           if (entry["filepath"] && entry["filepath"].includes(identifier)) {
             console.log("Replacing!!!")
+            console.log(replacer)
             try {
               replacer.$set.name = entry.name;
               await mongoDB.update(db, collection, {_id: entry._id.$oid}, replacer);
