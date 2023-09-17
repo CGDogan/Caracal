@@ -532,6 +532,7 @@ FSChanged.removed = function(db, collection, loader) {
           var newFilePath = identifier + '/' + contents[0];
           try {
             replacer = await fetch(loader + "/data/one/" + newFilePath);
+            replacer = await replacer.json();
           } catch (e) {
             res.send({error: "slideloader failure"});
             console.log(e);
